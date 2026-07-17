@@ -53,12 +53,12 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Write a unit test in `tests/unit/test_notifier.py` to mock the `requests.post` call and verify the `Notifier` sends a correctly formatted message.
+- [X] T008 [P] [US1] Write a unit test in `tests/unit/test_notifier.py` to mock the `requests.post` call and verify the `Notifier` sends a correctly formatted message.
 - [ ] T009 [P] [US1] Write a unit test in `tests/unit/test_llm_handler.py` to check that the handler correctly calls the Gemini client with the right prompt and schema.
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Implement the `Notifier.send_message` method in `src/bot/notifier.py` to send a POST request to the Telegram API.
+- [X] T010 [P] [US1] Implement the `Notifier.send_message` method in `src/bot/notifier.py` to send a POST request to the Telegram API.
 - [ ] T011 [US1] Implement the `LLMHandler.extract_info` method in `src/bot/llm_handler.py` to call the Gemini API with the email body and the JSON schema from `contracts/gemini-schema.json`.
 - [ ] T012 [US1] Implement the `GmailClient.get_new_emails` method in `src/bot/gmail_client.py` to search for emails without the `jobbot-processado` label using the Gmail API. (Depends on T005)
 - [ ] T013 [US1] Implement the `GmailClient.apply_label` method in `src/bot/gmail_client.py` to add the `jobbot-processado` label to a message by its ID.
