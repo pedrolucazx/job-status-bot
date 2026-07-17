@@ -39,7 +39,7 @@
 
 - [X] T005 Implement Google authentication helper in `src/utils/auth.py` to handle OAuth2 credential loading from environment variables and refresh tokens.
 - [ ] T006 [P] Create placeholder classes and methods for `GmailClient` in `src/bot/gmail_client.py`, `LLMHandler` in `src/bot/llm_handler.py`, and `Notifier` in `src/bot/notifier.py`.
-- [ ] T007 Create the main entry point script `src/bot/main.py` with argument parsing for `--local-email` and basic orchestration logic structure.
+- [X] T007 Create the main entry point script `src/bot/main.py` with argument parsing for `--local-email` and basic orchestration logic structure.
 
 **Checkpoint**: Foundation ready - user story implementation can now begin.
 
@@ -62,7 +62,7 @@
 - [X] T011 [US1] Implement the `LLMHandler.extract_info` method in `src/bot/llm_handler.py` to call the Gemini API with the email body and the JSON schema from `contracts/gemini-schema.json`.
 - [X] T012 [US1] Implement the `GmailClient.get_new_emails` method in `src/bot/gmail_client.py` to search for emails without the `jobbot-processado` label using the Gmail API. (Depends on T005)
 - [X] T013 [US1] Implement the `GmailClient.apply_label` method in `src/bot/gmail_client.py` to add the `jobbot-processado` label to a message by its ID.
-- [ ] T014 [US1] Implement the core processing loop in `src/bot/main.py` to orchestrate the flow for a single email: get email -> extract info -> send notification if `resultado == 'rejeitado'` -> apply label.
+- [X] T014 [US1] Implement the core processing loop in `src/bot/main.py` to orchestrate the flow for a single email: get email -> extract info -> send notification if `resultado == 'rejeitado'` -> apply label.
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently using the `quickstart.md` guide.
 
@@ -76,7 +76,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Update the core processing loop in `src/bot/main.py` to handle the `resultado == 'avancou'` case and format the correct `✅ Avançou de etapa...` message.
+- [X] T015 [US2] Update the core processing loop in `src/bot/main.py` to handle the `resultado == 'avancou'` case and format the correct `✅ Avançou de etapa...` message.
 
 **Checkpoint**: User Stories 1 and 2 should both work.
 
@@ -90,7 +90,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Update the core processing loop in `src/bot/main.py` to ensure no notification is sent if `job_related` is `false` or `resultado` is `indefinido`.
+- [X] T016 [US3] Update the core processing loop in `src/bot/main.py` to ensure no notification is sent if `job_related` is `false` or `resultado` is `indefinido`.
 
 **Checkpoint**: All user stories should now be independently functional.
 
