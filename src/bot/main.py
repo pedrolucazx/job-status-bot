@@ -9,15 +9,19 @@ from src.bot.notifier import Notifier
 
 load_dotenv()
 
+EXCLUDED_SENDERS = ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com"]
+
 def process_email(email_body, sender, subject, gmail_client, llm_handler, notifier, message_id, simulate=False):
     ats_domains = load_ats_domains()
     keywords = ["processo seletivo", "sua candidatura", "feedback", "retorno sobre a vaga"]
 
+    sender_lower = sender.lower()
     sender_domain = sender.split('@')[-1].lower() if '@' in sender else ''
+    is_excluded = any(addr in sender_lower for addr in EXCLUDED_SENDERS)
     matches_ats = any(domain in sender_domain for domain in ats_domains)
     matches_keyword = any(kw in subject.lower() for kw in keywords)
 
-    if not matches_ats and not matches_keyword:
+    if is_excluded or (not matches_ats and not matches_keyword):
         print(f"Email {message_id} does not match cheap filter. Applying label and skipping.")
         if not simulate:
             gmail_client.apply_label(message_id, 'jobbot-processado')
@@ -102,15 +106,18 @@ def main():
         print(f"Found {len(emails)} new email(s).")
 
         for email in emails:
-            process_email(
-                email.get('body', ''),
-                email.get('sender', ''),
-                email.get('subject', ''),
-                gmail_client,
-                llm_handler,
-                notifier,
-                email.get('id', '')
-            )
+            try:
+                process_email(
+                    email.get('body', ''),
+                    email.get('sender', ''),
+                    email.get('subject', ''),
+                    gmail_client,
+                    llm_handler,
+                    notifier,
+                    email.get('id', '')
+                )
+            except Exception as e:
+                print(f"Error processing email {email.get('id', '')}: {e}. Leaving unlabeled for retry next run.")
 
 if __name__ == '__main__':
     main()
