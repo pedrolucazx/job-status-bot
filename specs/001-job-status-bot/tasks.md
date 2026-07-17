@@ -104,7 +104,7 @@
 - [X] T018 [P] Write a `README.md` for the project, including setup instructions from `quickstart.md` and an overview of the architecture.
 - [X] T019 [P] Write a unit test in `tests/unit/test_gmail_client.py` to mock the Gmail API service and verify `get_new_emails` and `apply_label` construct the correct API calls.
 - [X] T020 Run `pip freeze > requirements.txt` to lock final dependencies.
-- [ ] T021 Perform a final code cleanup, add comments where necessary, and ensure all local test cases pass.
+- [X] T021 Perform a final code cleanup, add comments where necessary, and ensure all local test cases pass.
 
 ---
 
