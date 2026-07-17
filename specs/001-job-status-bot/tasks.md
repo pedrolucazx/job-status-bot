@@ -24,10 +24,10 @@
 
 **Purpose**: Project initialization and basic structure.
 
-- [ ] T001 [P] Create project directory structure: `src/bot`, `src/config`, `src/utils`, `tests/integration`, `tests/unit`.
+- [X] T001 [P] Create project directory structure: `src/bot`, `src/config`, `src/utils`, `tests/integration`, `tests/unit`.
 - [ ] T002 [P] Create `requirements.txt` with primary dependencies: `google-api-python-client`, `google-auth`, `google-generativeai`, `requests`, `python-dotenv`.
 - [ ] T003 [P] Create configuration file `src/config/ats_domains.txt` with the initial list of ATS domains from `SPEC.md`.
-- [ ] T004 [P] Create empty `__init__.py` files in `src/`, `src/bot/`, `src/utils/`, `src/config/`, `tests/`, `tests/unit/`, `tests/integration/`.
+- [X] T004 [P] Create empty `__init__.py` files in `src/`, `src/bot/`, `src/utils/`, `src/config/`, `tests/`, `tests/unit/`, `tests/integration/`.
 
 ---
 
