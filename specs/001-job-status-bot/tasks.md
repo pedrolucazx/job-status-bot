@@ -60,8 +60,8 @@
 
 - [X] T010 [P] [US1] Implement the `Notifier.send_message` method in `src/bot/notifier.py` to send a POST request to the Telegram API.
 - [X] T011 [US1] Implement the `LLMHandler.extract_info` method in `src/bot/llm_handler.py` to call the Gemini API with the email body and the JSON schema from `contracts/gemini-schema.json`.
-- [ ] T012 [US1] Implement the `GmailClient.get_new_emails` method in `src/bot/gmail_client.py` to search for emails without the `jobbot-processado` label using the Gmail API. (Depends on T005)
-- [ ] T013 [US1] Implement the `GmailClient.apply_label` method in `src/bot/gmail_client.py` to add the `jobbot-processado` label to a message by its ID.
+- [X] T012 [US1] Implement the `GmailClient.get_new_emails` method in `src/bot/gmail_client.py` to search for emails without the `jobbot-processado` label using the Gmail API. (Depends on T005)
+- [X] T013 [US1] Implement the `GmailClient.apply_label` method in `src/bot/gmail_client.py` to add the `jobbot-processado` label to a message by its ID.
 - [ ] T014 [US1] Implement the core processing loop in `src/bot/main.py` to orchestrate the flow for a single email: get email -> extract info -> send notification if `resultado == 'rejeitado'` -> apply label.
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently using the `quickstart.md` guide.
@@ -102,7 +102,7 @@
 
 - [ ] T017 [P] Create the GitHub Actions workflow file `.github/workflows/poll.yml` with the `schedule: cron` trigger.
 - [ ] T018 [P] Write a `README.md` for the project, including setup instructions from `quickstart.md` and an overview of the architecture.
-- [ ] T019 [P] Write a unit test in `tests/unit/test_gmail_client.py` to mock the Gmail API service and verify `get_new_emails` and `apply_label` construct the correct API calls.
+- [X] T019 [P] Write a unit test in `tests/unit/test_gmail_client.py` to mock the Gmail API service and verify `get_new_emails` and `apply_label` construct the correct API calls.
 - [ ] T020 Run `pip freeze > requirements.txt` to lock final dependencies.
 - [ ] T021 Perform a final code cleanup, add comments where necessary, and ensure all local test cases pass.
 
