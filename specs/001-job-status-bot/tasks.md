@@ -38,7 +38,7 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [X] T005 Implement Google authentication helper in `src/utils/auth.py` to handle OAuth2 credential loading from environment variables and refresh tokens.
-- [ ] T006 [P] Create placeholder classes and methods for `GmailClient` in `src/bot/gmail_client.py`, `LLMHandler` in `src/bot/llm_handler.py`, and `Notifier` in `src/bot/notifier.py`.
+- [X] T006 [P] Create placeholder classes and methods for `GmailClient` in `src/bot/gmail_client.py`, `LLMHandler` in `src/bot/llm_handler.py`, and `Notifier` in `src/bot/notifier.py`.
 - [X] T007 Create the main entry point script `src/bot/main.py` with argument parsing for `--local-email` and basic orchestration logic structure.
 
 **Checkpoint**: Foundation ready - user story implementation can now begin.
