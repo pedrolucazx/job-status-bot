@@ -9,7 +9,11 @@ from src.bot.notifier import Notifier
 
 load_dotenv()
 
-EXCLUDED_SENDERS = ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com"]
+EXCLUDED_SENDERS = [
+    "jobalerts-noreply@linkedin.com",
+    "jobs-noreply@linkedin.com",
+    "avisovagas@catho.com.br",
+]
 
 def process_email(email_body, sender, subject, gmail_client, llm_handler, notifier, message_id, simulate=False):
     ats_domains = load_ats_domains()
