@@ -1,7 +1,4 @@
 import argparse
-import json
-import os
-import base64
 from dotenv import load_dotenv
 from src.bot.gmail_client import GmailClient
 from src.bot.llm_handler import LLMHandler
@@ -9,65 +6,63 @@ from src.bot.notifier import Notifier
 
 load_dotenv()
 
+# Senders that are pure noise (no application ever involved) — kept as a
+# small, stable optimization to skip them for free. Relevance for
+# everything else is judged by the LLM itself, not a keyword/domain list,
+# so this never needs updating for a new ATS or a foreign-language email.
 EXCLUDED_SENDERS = [
     "jobalerts-noreply@linkedin.com",
     "avisovagas@catho.com.br",
 ]
 
-def process_email(email_body, sender, subject, gmail_client, llm_handler, notifier, message_id, simulate=False):
-    ats_domains = load_ats_domains()
-    keywords = ["processo seletivo", "sua candidatura", "feedback", "retorno sobre a vaga", "sua atualização"]
+BATCH_SIZE = 10
 
+
+def is_excluded(sender):
     sender_lower = sender.lower()
-    sender_domain = sender.split('@')[-1].lower() if '@' in sender else ''
-    is_excluded = any(addr in sender_lower for addr in EXCLUDED_SENDERS)
-    matches_ats = any(domain in sender_domain for domain in ats_domains)
-    matches_keyword = any(kw in subject.lower() for kw in keywords)
+    return any(addr in sender_lower for addr in EXCLUDED_SENDERS)
 
-    if is_excluded or (not matches_ats and not matches_keyword):
-        print(f"Email {message_id} does not match cheap filter. Applying label and skipping.")
-        if not simulate:
-            gmail_client.apply_label(message_id, 'jobbot-processado')
-        else:
-            print("Simulating applying 'jobbot-processado' label.")
-        return
 
-    extracted = llm_handler.extract_info(email_body)
-
-    if not extracted.get('job_related'):
+def notify_and_label(result, gmail_client, notifier, message_id, simulate=False):
+    if not result.get('job_related'):
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
-        if not simulate:
-            gmail_client.apply_label(message_id, 'jobbot-processado')
-        else:
-            print("Simulating applying 'jobbot-processado' label.")
-        return
-
-    resultado = extracted.get('resultado')
-    empresa = extracted.get('empresa', 'Unknown')
-    cargo = extracted.get('cargo', 'Unknown')
-
-    email_link = f"https://mail.google.com/mail/u/0/#all/{message_id}"
-
-    if resultado == 'rejeitado':
-        message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
-        print(f"Sending notification to Telegram: {message}")
-        notifier.send_message(message)
-    elif resultado == 'avancou':
-        message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{email_link}"
-        print(f"Sending notification to Telegram: {message}")
-        notifier.send_message(message)
     else:
-        print(f"Email {message_id} resultado is '{resultado}'. No notification sent.")
+        resultado = result.get('resultado')
+        empresa = result.get('empresa', 'Unknown')
+        cargo = result.get('cargo', 'Unknown')
+        email_link = f"https://mail.google.com/mail/u/0/#all/{message_id}"
+
+        if resultado == 'rejeitado':
+            message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
+            print(f"Sending notification to Telegram: {message}")
+            notifier.send_message(message)
+        elif resultado == 'avancou':
+            message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{email_link}"
+            print(f"Sending notification to Telegram: {message}")
+            notifier.send_message(message)
+        else:
+            print(f"Email {message_id} resultado is '{resultado}'. No notification sent.")
 
     if not simulate:
         gmail_client.apply_label(message_id, 'jobbot-processado')
     else:
         print("Simulating applying 'jobbot-processado' label.")
 
-def load_ats_domains():
-    path = os.path.join(os.path.dirname(__file__), '..', 'config', 'ats_domains.txt')
-    with open(path, 'r') as f:
-        return [line.strip() for line in f if line.strip()]
+
+def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False):
+    results = llm_handler.classify_batch(batch)
+    for email in batch:
+        result = results.get(email['id'])
+        if result is None:
+            print(f"Email {email['id']} missing from batch response, leaving unlabeled for retry.")
+            continue
+        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate)
+
+
+def chunk(items, size):
+    for i in range(0, len(items), size):
+        yield items[i:i + size]
+
 
 def main():
     parser = argparse.ArgumentParser(description='Job Status Bot')
@@ -98,7 +93,8 @@ def main():
         llm_handler = LLMHandler()
         notifier = Notifier()
 
-        process_email(body, sender, subject, None, llm_handler, notifier, 'local', simulate=True)
+        result = llm_handler.extract_info(body)
+        notify_and_label(result, None, notifier, 'local', simulate=True)
 
         print("Local test complete.")
     else:
@@ -110,19 +106,20 @@ def main():
         emails = gmail_client.get_new_emails()
         print(f"Found {len(emails)} new email(s).")
 
+        to_classify = []
         for email in emails:
+            if is_excluded(email.get('sender', '')):
+                print(f"Email {email.get('id', '')} from excluded sender. Applying label and skipping.")
+                gmail_client.apply_label(email.get('id', ''), 'jobbot-processado')
+            else:
+                to_classify.append(email)
+
+        for batch in chunk(to_classify, BATCH_SIZE):
             try:
-                process_email(
-                    email.get('body', ''),
-                    email.get('sender', ''),
-                    email.get('subject', ''),
-                    gmail_client,
-                    llm_handler,
-                    notifier,
-                    email.get('id', '')
-                )
+                process_batch(batch, gmail_client, llm_handler, notifier)
             except Exception as e:
-                print(f"Error processing email {email.get('id', '')}: {e}. Leaving unlabeled for retry next run.")
+                ids = [e_.get('id', '') for e_ in batch]
+                print(f"Error processing batch {ids}: {e}. Leaving unlabeled for retry next run.")
 
 if __name__ == '__main__':
     main()
