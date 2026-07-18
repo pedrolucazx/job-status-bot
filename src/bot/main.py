@@ -11,13 +11,12 @@ load_dotenv()
 
 EXCLUDED_SENDERS = [
     "jobalerts-noreply@linkedin.com",
-    "jobs-noreply@linkedin.com",
     "avisovagas@catho.com.br",
 ]
 
 def process_email(email_body, sender, subject, gmail_client, llm_handler, notifier, message_id, simulate=False):
     ats_domains = load_ats_domains()
-    keywords = ["processo seletivo", "sua candidatura", "feedback", "retorno sobre a vaga"]
+    keywords = ["processo seletivo", "sua candidatura", "feedback", "retorno sobre a vaga", "sua atualização"]
 
     sender_lower = sender.lower()
     sender_domain = sender.split('@')[-1].lower() if '@' in sender else ''
