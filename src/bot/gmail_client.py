@@ -10,10 +10,22 @@ class GmailClient:
         label_id = self._get_label_id('jobbot-processado')
         if not label_id:
             raise ValueError("Label 'jobbot-processado' not found.")
-        
-        query = '-label:jobbot-processado'
-        results = self.service.users().messages().list(userId='me', q=query).execute()
-        messages = results.get('messages', [])
+
+        # Recent mail first, so new applications aren't stuck behind an
+        # old backlog while it's still draining under the LLM rate limit.
+        recent = self.service.users().messages().list(
+            userId='me', q='-label:jobbot-processado newer_than:2d'
+        ).execute().get('messages', [])
+        backlog = self.service.users().messages().list(
+            userId='me', q='-label:jobbot-processado'
+        ).execute().get('messages', [])
+
+        seen = set()
+        messages = []
+        for m in recent + backlog:
+            if m['id'] not in seen:
+                seen.add(m['id'])
+                messages.append(m)
         
         emails = []
         for message in messages:
