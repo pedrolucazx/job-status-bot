@@ -1,5 +1,49 @@
+import base64
+import re
+from html.parser import HTMLParser
 from googleapiclient.discovery import build
 from src.utils.auth import get_credentials
+
+_URL_RE = re.compile(r'https?://\S+')
+
+def _content_length(text):
+    """Length of the text with URLs stripped — long footers are mostly
+    tracking links, so raw length alone can't tell real content from
+    boilerplate."""
+    return len(_URL_RE.sub('', text))
+
+class _HTMLTextExtractor(HTMLParser):
+    _SKIP_TAGS = {'script', 'style', 'head'}
+    _BLOCK_TAGS = {'p', 'div', 'br', 'tr', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'}
+
+    def __init__(self):
+        super().__init__()
+        self._chunks = []
+        self._skip_depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._SKIP_TAGS:
+            self._skip_depth += 1
+        elif tag in self._BLOCK_TAGS:
+            self._chunks.append('\n')
+
+    def handle_endtag(self, tag):
+        if tag in self._SKIP_TAGS:
+            self._skip_depth = max(0, self._skip_depth - 1)
+
+    def handle_data(self, data):
+        if self._skip_depth == 0:
+            self._chunks.append(data)
+
+    def text(self):
+        return '\n'.join(line.strip() for line in ''.join(self._chunks).splitlines() if line.strip())
+
+
+def html_to_text(html):
+    parser = _HTMLTextExtractor()
+    parser.feed(html)
+    return parser.text()
+
 
 class GmailClient:
     def __init__(self):
@@ -26,7 +70,7 @@ class GmailClient:
             if m['id'] not in seen:
                 seen.add(m['id'])
                 messages.append(m)
-        
+
         emails = []
         for message in messages:
             msg = self.service.users().messages().get(userId='me', id=message['id']).execute()
@@ -37,20 +81,35 @@ class GmailClient:
                     email_data['subject'] = header['value']
                 if header['name'] == 'From':
                     email_data['sender'] = header['value']
-            
-            if 'parts' in msg['payload']:
-                for part in msg['payload']['parts']:
-                    if part['mimeType'] == 'text/plain':
-                        import base64
-                        email_data['body'] = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-                        break
-            else:
-                 import base64
-                 email_data['body'] = base64.urlsafe_b64decode(msg['payload']['body']['data']).decode('utf-8')
 
+            email_data['body'] = self._extract_body(msg['payload'])
             emails.append(email_data)
-        
+
         return emails
+
+    def _extract_body(self, payload):
+        parts_by_type = {}
+        self._collect_parts(payload, parts_by_type)
+
+        plain = parts_by_type.get('text/plain', '')
+        html = parts_by_type.get('text/html')
+        html_text = html_to_text(html) if html else ''
+
+        # Pick whichever alternative has more actual content once tracking
+        # URLs are stripped out — a plaintext part that's mostly footer
+        # links can still be longer in raw characters than the real
+        # message, so length alone isn't a reliable signal.
+        if _content_length(html_text) > _content_length(plain):
+            return html_text
+        return plain
+
+    def _collect_parts(self, payload, parts_by_type):
+        mime_type = payload.get('mimeType', '')
+        data = payload.get('body', {}).get('data')
+        if data and mime_type in ('text/plain', 'text/html') and mime_type not in parts_by_type:
+            parts_by_type[mime_type] = base64.urlsafe_b64decode(data).decode('utf-8', errors='replace')
+        for part in payload.get('parts', []):
+            self._collect_parts(part, parts_by_type)
 
     def _get_label_id(self, label_name):
         results = self.service.users().labels().list(userId='me').execute()
@@ -59,7 +118,6 @@ class GmailClient:
             if label['name'] == label_name:
                 return label['id']
         return None
-
 
     def apply_label(self, message_id, label_name):
         label_id = self._get_label_id(label_name)
