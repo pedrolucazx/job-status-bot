@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 from src.utils.auth import get_credentials
 
 _URL_RE = re.compile(r'https?://\S+')
+_TEMPLATE_RE = re.compile(r'email_[a-zA-Z0-9_]+')
 
 def _content_length(text):
     """Length of the text with URLs stripped — long footers are mostly
@@ -81,6 +82,10 @@ class GmailClient:
                     email_data['subject'] = header['value']
                 if header['name'] == 'From':
                     email_data['sender'] = header['value']
+                if header['name'] == 'List-Unsubscribe':
+                    match = _TEMPLATE_RE.search(header['value'])
+                    if match:
+                        email_data['template_hint'] = match.group(0)
 
             email_data['body'] = self._extract_body(msg['payload'])
             emails.append(email_data)

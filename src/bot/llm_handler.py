@@ -15,7 +15,12 @@ MAX_BODY_CHARS = 1500
 RULES = """Regras pro campo "resultado":
 - "rejeitado": a empresa explicitamente diz que não vai seguir com o candidato (ex: "decidimos seguir com outros candidatos", "não avançar neste momento").
 - "avancou": a empresa explicitamente convida pra uma próxima etapa concreta (ex: "gostaríamos de agendar uma entrevista", "você foi selecionado para a próxima fase").
-- "indefinido": qualquer coisa que não seja um veredito claro — isso INCLUI confirmação de recebimento de candidatura ("recebemos seu currículo", "sua candidatura foi enviada com sucesso", "obrigado por se candidatar"), atualização de status neutra sem decisão, ou qualquer ambiguidade. Na dúvida, use "indefinido", nunca infira "avancou" ou "rejeitado" de uma mensagem genérica de confirmação."""
+- "indefinido": qualquer coisa que não seja um veredito claro — isso INCLUI confirmação de recebimento de candidatura ("recebemos seu currículo", "sua candidatura foi enviada com sucesso", "obrigado por se candidatar"), atualização de status neutra sem decisão, ou qualquer ambiguidade. Na dúvida, use "indefinido", nunca infira "avancou" ou "rejeitado" de uma mensagem genérica de confirmação.
+
+Alguns emails (principalmente do LinkedIn) trazem um "Sinal de template" extraído do próprio provedor — é o nome interno que a plataforma dá àquele tipo de email, e é um indício confiável do que ele realmente é, use como forte apoio pra decisão além do texto:
+- nomes contendo "rejected" → forte indício de "rejeitado".
+- nomes contendo "viewed", "confirmation", "reminder", "saved_job", "alert" → NÃO são veredito, tratar como "indefinido" (ou job_related=false se for só alerta de vaga sem candidatura associada), mesmo que o texto pareça positivo.
+- se não houver sinal de template, ou o nome não for reconhecível, julgue só pelo conteúdo do email normalmente."""
 
 
 class LLMHandler:
@@ -68,7 +73,8 @@ Email:
             f"--- EMAIL id={e['id']} ---\n"
             f"De: {e['sender']}\n"
             f"Assunto: {e['subject']}\n"
-            f"Corpo:\n{e['body'][:MAX_BODY_CHARS]}"
+            + (f"Sinal de template: {e['template_hint']}\n" if e.get('template_hint') else "")
+            + f"Corpo:\n{e['body'][:MAX_BODY_CHARS]}"
             for e in emails
         )
 
