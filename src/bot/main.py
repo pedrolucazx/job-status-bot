@@ -30,7 +30,10 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False)
         resultado = result.get('resultado')
         empresa = result.get('empresa', 'Unknown')
         cargo = result.get('cargo', 'Unknown')
-        email_link = f"https://mail.google.com/mail/u/0/#all/{message_id}"
+        # Using the account's email address instead of a positional /u/N/
+        # index — the index depends on login order in the browser, which
+        # varies by device/session; the address always resolves correctly.
+        email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#all/{message_id}"
 
         if resultado == 'rejeitado':
             message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
