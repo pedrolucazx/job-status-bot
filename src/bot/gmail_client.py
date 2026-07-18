@@ -86,6 +86,8 @@ class GmailClient:
                     match = _TEMPLATE_RE.search(header['value'])
                     if match:
                         email_data['template_hint'] = match.group(0)
+                if header['name'] in ('Message-ID', 'Message-Id'):
+                    email_data['rfc822_msgid'] = header['value'].strip('<>')
 
             email_data['body'] = self._extract_body(msg['payload'])
             emails.append(email_data)

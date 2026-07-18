@@ -23,17 +23,22 @@ def is_excluded(sender):
     return any(addr in sender_lower for addr in EXCLUDED_SENDERS)
 
 
-def notify_and_label(result, gmail_client, notifier, message_id, simulate=False):
+def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, rfc822_msgid=None):
     if not result.get('job_related'):
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
     else:
         resultado = result.get('resultado')
         empresa = result.get('empresa', 'Unknown')
         cargo = result.get('cargo', 'Unknown')
-        # Using the account's email address instead of a positional /u/N/
-        # index — the index depends on login order in the browser, which
-        # varies by device/session; the address always resolves correctly.
-        email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#all/{message_id}"
+        # Gmail's API message id isn't the id its own web UI uses in links —
+        # linking by the email's RFC822 Message-ID via rfc822msgid: search
+        # is what actually resolves. Using the account's email address
+        # instead of a positional /u/N/ index too, since that index depends
+        # on login order in the browser and varies by device/session.
+        if rfc822_msgid:
+            email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#search/rfc822msgid:{rfc822_msgid}"
+        else:
+            email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#all/{message_id}"
 
         if resultado == 'rejeitado':
             message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
@@ -59,7 +64,7 @@ def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False):
         if result is None:
             print(f"Email {email['id']} missing from batch response, leaving unlabeled for retry.")
             continue
-        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate)
+        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate, rfc822_msgid=email.get('rfc822_msgid'))
 
 
 def chunk(items, size):
