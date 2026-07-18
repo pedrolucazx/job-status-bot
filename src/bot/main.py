@@ -43,12 +43,14 @@ def process_email(email_body, sender, subject, gmail_client, llm_handler, notifi
     empresa = extracted.get('empresa', 'Unknown')
     cargo = extracted.get('cargo', 'Unknown')
 
+    email_link = f"https://mail.google.com/mail/u/0/#all/{message_id}"
+
     if resultado == 'rejeitado':
-        message = f"❌ Rejeitado — {empresa} ({cargo})"
+        message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
         print(f"Sending notification to Telegram: {message}")
         notifier.send_message(message)
     elif resultado == 'avancou':
-        message = f"✅ Avançou de etapa — {empresa} ({cargo})"
+        message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{email_link}"
         print(f"Sending notification to Telegram: {message}")
         notifier.send_message(message)
     else:
