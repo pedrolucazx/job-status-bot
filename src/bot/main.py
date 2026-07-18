@@ -32,13 +32,15 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False,
         cargo = result.get('cargo', 'Unknown')
         # Gmail's API message id isn't the id its own web UI uses in links —
         # linking by the email's RFC822 Message-ID via rfc822msgid: search
-        # is what actually resolves. Using the account's email address
-        # instead of a positional /u/N/ index too, since that index depends
-        # on login order in the browser and varies by device/session.
+        # is what actually resolves. authuser=<email> picks the right
+        # account regardless of login order/device — the older trick of
+        # putting the email in the /u/ path segment was discontinued by
+        # Google in April 2026 (returns "Temporary Error (404)").
+        account = "?authuser=pedrolucazxmesquita@gmail.com"
         if rfc822_msgid:
-            email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#search/rfc822msgid:{rfc822_msgid}"
+            email_link = f"https://mail.google.com/mail/{account}#search/rfc822msgid:{rfc822_msgid}"
         else:
-            email_link = f"https://mail.google.com/mail/u/pedrolucazxmesquita@gmail.com/#all/{message_id}"
+            email_link = f"https://mail.google.com/mail/{account}#all/{message_id}"
 
         if resultado == 'rejeitado':
             message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
