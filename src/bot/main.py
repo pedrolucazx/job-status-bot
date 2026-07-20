@@ -40,7 +40,7 @@ def build_gmail_app_link(message_id, thread_id=None):
 def build_gmail_web_link(message_id, thread_id=None):
     conversation_id = quote(thread_id or message_id, safe='')
     account = quote(GMAIL_ACCOUNT, safe='')
-    return f"https://mail.google.com/mail/u/{account}/#all/{conversation_id}"
+    return f"https://mail.google.com/mail/?authuser={account}#all/{conversation_id}"
 
 
 def build_gmail_mobile_link(message_id, thread_id=None):

@@ -19,13 +19,13 @@ class TestMain(unittest.TestCase):
         self.assertEqual(app_link, 'googlegmail:///cv=thread456/accountId=1')
         self.assertEqual(
             web_link,
-            'https://mail.google.com/mail/u/pedrolucazxmesquita%40gmail.com/#all/thread456',
+            'https://mail.google.com/mail/?authuser=pedrolucazxmesquita%40gmail.com#all/thread456',
         )
         self.assertEqual(
             mobile_link,
             'https://pedrolucazx.github.io/job-status-bot/gmail-redirect.html?'
             'to=googlegmail%3A%2F%2F%2Fcv%3Dthread456%2FaccountId%3D1&'
-            'fallback=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2Fpedrolucazxmesquita%2540gmail.com%2F%23all%2Fthread456',
+            'fallback=https%3A%2F%2Fmail.google.com%2Fmail%2F%3Fauthuser%3Dpedrolucazxmesquita%2540gmail.com%23all%2Fthread456',
         )
         self.assertNotIn('rfc822msgid', app_link)
         self.assertNotIn('rfc822msgid', mobile_link)
@@ -48,7 +48,7 @@ class TestMain(unittest.TestCase):
             '✅ Avançou de etapa — Digital Growth (Desenvolvedor(a) Fullstack Pleno)\n'
             'Próxima etapa: entrevista técnica com o time\n'
             'Abrir no Gmail app (pedrolucazxmesquita@gmail.com)\n'
-            'Web/PC: https://mail.google.com/mail/u/pedrolucazxmesquita%40gmail.com/#all/thread456'
+            'Web/PC: https://mail.google.com/mail/?authuser=pedrolucazxmesquita%40gmail.com#all/thread456'
         )
         app_label = 'Abrir no Gmail app (pedrolucazxmesquita@gmail.com)'
         notifier.send_message.assert_called_once_with(
@@ -59,7 +59,7 @@ class TestMain(unittest.TestCase):
                     app_label,
                     'https://pedrolucazx.github.io/job-status-bot/gmail-redirect.html?'
                     'to=googlegmail%3A%2F%2F%2Fcv%3Dthread456%2FaccountId%3D1&'
-                    'fallback=https%3A%2F%2Fmail.google.com%2Fmail%2Fu%2Fpedrolucazxmesquita%2540gmail.com%2F%23all%2Fthread456',
+                    'fallback=https%3A%2F%2Fmail.google.com%2Fmail%2F%3Fauthuser%3Dpedrolucazxmesquita%2540gmail.com%23all%2Fthread456',
                 )
             ],
         )
