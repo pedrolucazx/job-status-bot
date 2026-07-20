@@ -72,27 +72,36 @@ class GmailClient:
                 seen.add(m['id'])
                 messages.append(m)
 
-        emails = []
-        for message in messages:
-            msg = self.service.users().messages().get(userId='me', id=message['id']).execute()
-            email_data = {'id': message['id']}
-            headers = msg['payload']['headers']
-            for header in headers:
-                if header['name'] == 'Subject':
-                    email_data['subject'] = header['value']
-                if header['name'] == 'From':
-                    email_data['sender'] = header['value']
-                if header['name'] == 'List-Unsubscribe':
-                    match = _TEMPLATE_RE.search(header['value'])
-                    if match:
-                        email_data['template_hint'] = match.group(0)
-                if header['name'] in ('Message-ID', 'Message-Id'):
-                    email_data['rfc822_msgid'] = header['value'].strip('<>')
+        return [self._email_data_from_message(message) for message in messages]
 
-            email_data['body'] = self._extract_body(msg['payload'])
-            emails.append(email_data)
+    def get_email_by_rfc822_msgid(self, rfc822_msgid):
+        clean_msgid = rfc822_msgid.strip().strip('<>')
+        messages = self.service.users().messages().list(
+            userId='me', q=f'rfc822msgid:{clean_msgid}'
+        ).execute().get('messages', [])
+        if not messages:
+            return None
+        return self._email_data_from_message(messages[0])
 
-        return emails
+    def _email_data_from_message(self, message):
+        msg = self.service.users().messages().get(userId='me', id=message['id']).execute()
+        payload = msg['payload']
+        email_data = {
+            'id': msg.get('id', message['id']),
+            'thread_id': msg.get('threadId', message.get('threadId', message['id'])),
+        }
+        for header in payload['headers']:
+            if header['name'] == 'Subject':
+                email_data['subject'] = header['value']
+            if header['name'] == 'From':
+                email_data['sender'] = header['value']
+            if header['name'] == 'List-Unsubscribe':
+                match = _TEMPLATE_RE.search(header['value'])
+                if match:
+                    email_data['template_hint'] = match.group(0)
+
+        email_data['body'] = self._extract_body(payload)
+        return email_data
 
     def _extract_body(self, payload):
         parts_by_type = {}

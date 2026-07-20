@@ -1,4 +1,5 @@
 import argparse
+from urllib.parse import quote
 from dotenv import load_dotenv
 from src.bot.gmail_client import GmailClient
 from src.bot.llm_handler import LLMHandler
@@ -16,6 +17,7 @@ EXCLUDED_SENDERS = [
 ]
 
 BATCH_SIZE = 10
+GMAIL_ACCOUNT = "pedrolucazxmesquita@gmail.com"
 
 
 def is_excluded(sender):
@@ -23,24 +25,20 @@ def is_excluded(sender):
     return any(addr in sender_lower for addr in EXCLUDED_SENDERS)
 
 
-def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, rfc822_msgid=None):
+def build_gmail_link(message_id, thread_id=None):
+    conversation_id = thread_id or message_id
+    account = quote(GMAIL_ACCOUNT, safe='')
+    return f"https://mail.google.com/mail/?authuser={account}#all/{quote(conversation_id, safe='')}"
+
+
+def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, thread_id=None):
     if not result.get('job_related'):
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
     else:
         resultado = result.get('resultado')
         empresa = result.get('empresa', 'Unknown')
         cargo = result.get('cargo', 'Unknown')
-        # Gmail's API message id isn't the id its own web UI uses in links —
-        # linking by the email's RFC822 Message-ID via rfc822msgid: search
-        # is what actually resolves. authuser=<email> picks the right
-        # account regardless of login order/device — the older trick of
-        # putting the email in the /u/ path segment was discontinued by
-        # Google in April 2026 (returns "Temporary Error (404)").
-        account = "?authuser=pedrolucazxmesquita@gmail.com"
-        if rfc822_msgid:
-            email_link = f"https://mail.google.com/mail/{account}#search/rfc822msgid:{rfc822_msgid}"
-        else:
-            email_link = f"https://mail.google.com/mail/{account}#all/{message_id}"
+        email_link = build_gmail_link(message_id, thread_id)
 
         if resultado == 'rejeitado':
             message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
@@ -66,7 +64,7 @@ def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False):
         if result is None:
             print(f"Email {email['id']} missing from batch response, leaving unlabeled for retry.")
             continue
-        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate, rfc822_msgid=email.get('rfc822_msgid'))
+        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate, thread_id=email.get('thread_id'))
 
 
 def chunk(items, size):
@@ -77,6 +75,7 @@ def chunk(items, size):
 def main():
     parser = argparse.ArgumentParser(description='Job Status Bot')
     parser.add_argument('--local-email', type=str, help='Path to a local email file for testing.')
+    parser.add_argument('--resend-rfc822-msgid', type=str, help='Resend notification for a specific Gmail RFC822 Message-ID.')
     args = parser.parse_args()
 
     if args.local_email:
@@ -112,6 +111,14 @@ def main():
         gmail_client = GmailClient()
         llm_handler = LLMHandler()
         notifier = Notifier()
+
+        if args.resend_rfc822_msgid:
+            email = gmail_client.get_email_by_rfc822_msgid(args.resend_rfc822_msgid)
+            if not email:
+                raise SystemExit(f"Email with RFC822 Message-ID {args.resend_rfc822_msgid!r} not found.")
+            print(f"Resending notification for email {email['id']}.")
+            process_batch([email], gmail_client, llm_handler, notifier, simulate=True)
+            return
 
         emails = gmail_client.get_new_emails()
         print(f"Found {len(emails)} new email(s).")

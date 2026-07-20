@@ -7,6 +7,11 @@ on:
     # is unreliably delayed (observed 55-255 min gaps on this repo).
     - cron: '0 * * * *'
   workflow_dispatch:
+    inputs:
+      resend_rfc822_msgid:
+        description: 'RFC822 Message-ID to resend a specific notification'
+        required: false
+        type: string
 
 jobs:
   poll:
@@ -17,8 +22,14 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
-      - run: python -m src.bot.main
+      - run: |
+          if [ -n "$RESEND_RFC822_MSGID" ]; then
+            python -m src.bot.main --resend-rfc822-msgid "$RESEND_RFC822_MSGID"
+          else
+            python -m src.bot.main
+          fi
         env:
+          RESEND_RFC822_MSGID: ${{ github.event.inputs.resend_rfc822_msgid }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
