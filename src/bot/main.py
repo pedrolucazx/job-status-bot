@@ -20,6 +20,10 @@ EXCLUDED_SENDERS = [
 BATCH_SIZE = 10
 GMAIL_ACCOUNT = "pedrolucazxmesquita@gmail.com"
 GMAIL_IOS_ACCOUNT_ID = os.getenv('GMAIL_IOS_ACCOUNT_ID', '1')
+GMAIL_REDIRECT_BASE = os.getenv(
+    'GMAIL_REDIRECT_BASE',
+    'https://pedrolucazx.github.io/job-status-bot/gmail-redirect.html',
+)
 
 
 def is_excluded(sender):
@@ -36,7 +40,17 @@ def build_gmail_app_link(message_id, thread_id=None):
 def build_gmail_web_link(message_id, thread_id=None):
     conversation_id = quote(thread_id or message_id, safe='')
     account = quote(GMAIL_ACCOUNT, safe='')
-    return f"https://mail.google.com/mail/?authuser={account}#all/{conversation_id}"
+    return f"https://mail.google.com/mail/u/{account}/#all/{conversation_id}"
+
+
+def build_gmail_mobile_link(message_id, thread_id=None):
+    app_link = build_gmail_app_link(message_id, thread_id)
+    web_link = build_gmail_web_link(message_id, thread_id)
+    return (
+        f"{GMAIL_REDIRECT_BASE}?"
+        f"to={quote(app_link, safe='')}&"
+        f"fallback={quote(web_link, safe='')}"
+    )
 
 
 def utf16_length(text):
@@ -63,7 +77,7 @@ def next_step_text(result):
 
 
 def send_status_notification(notifier, status_line, result, message_id, thread_id=None):
-    app_link = build_gmail_app_link(message_id, thread_id)
+    mobile_link = build_gmail_mobile_link(message_id, thread_id)
     web_link = build_gmail_web_link(message_id, thread_id)
     app_label = f"Abrir no Gmail app ({GMAIL_ACCOUNT})"
     lines = [status_line]
@@ -73,7 +87,7 @@ def send_status_notification(notifier, status_line, result, message_id, thread_i
 
     lines.extend([app_label, f"Web/PC: {web_link}"])
     message = "\n".join(lines)
-    entities = [build_text_link_entity(message, app_label, app_link)]
+    entities = [build_text_link_entity(message, app_label, mobile_link)]
 
     print(f"Sending notification to Telegram: {message}")
     notifier.send_message(message, entities=entities)

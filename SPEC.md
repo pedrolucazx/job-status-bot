@@ -53,8 +53,9 @@ Status no Notion depois de ler a notificação.
    Quando houver avanço, incluir também a próxima etapa explícita no email
    (`proxima_etapa`; string vazia no JSON quando não houver próxima etapa
    clara). Na notificação, mostrar `Próxima etapa: <texto>`, ou `não informada` se o email não deixar isso
-   claro. Linha opcional: link pro email original no Gmail, pra conferir o
-   texto completo se quiser. Se `resultado == "indefinido"`
+   claro. Linha opcional: link pro email original no Gmail, via HTTPS clicável
+   compatível com Telegram; em mobile pode redirecionar para o Gmail app e
+   mantém fallback web pra conferir o texto completo se quiser. Se `resultado == "indefinido"`
    (ex: só confirmação de recebimento de candidatura, sem veredito):
    **não notifica** — evita ruído.
 6. **Marca como processado** — aplica a label `jobbot-processado` no

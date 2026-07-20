@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Abrindo Gmail…</title>
+  <style>
+    body {
+      color: #202124;
+      font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 32px 20px;
+    }
+    main {
+      margin: 0 auto;
+      max-width: 520px;
+    }
+    a {
+      color: #0b57d0;
+      font-weight: 600;
+    }
+    .button {
+      background: #0b57d0;
+      border-radius: 999px;
+      color: white;
+      display: inline-block;
+      margin: 12px 0;
+      padding: 12px 18px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Abrindo Gmail…</h1>
+    <p>Se o Gmail não abrir automaticamente, toque no botão abaixo.</p>
+    <p><a class="button" id="open-app" href="#">Abrir no Gmail app</a></p>
+    <p><a id="fallback" href="https://mail.google.com/">Abrir no Gmail web</a></p>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var deepLink = params.get('to') || '';
+      var fallback = params.get('fallback') || 'https://mail.google.com/';
+      var openApp = document.getElementById('open-app');
+      var fallbackLink = document.getElementById('fallback');
+
+      fallbackLink.href = fallback;
+
+      if (!/^googlegmail:\/\/\/cv=/.test(deepLink)) {
+        openApp.textContent = 'Link do Gmail app inválido';
+        openApp.href = fallback;
+        window.location.replace(fallback);
+        return;
+      }
+
+      openApp.href = deepLink;
+      window.location.href = deepLink;
+
+      window.setTimeout(function () {
+        if (!document.hidden) {
+          fallbackLink.focus();
+        }
+      }, 1200);
+    }());
+  </script>
+</body>
+</html>
