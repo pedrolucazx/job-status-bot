@@ -39,6 +39,46 @@ def build_gmail_web_link(message_id, thread_id=None):
     return f"https://mail.google.com/mail/?authuser={account}#all/{conversation_id}"
 
 
+def utf16_length(text):
+    return len(text.encode('utf-16-le')) // 2
+
+
+def build_text_link_entity(message, label, url):
+    offset = message.index(label)
+    return {
+        "type": "text_link",
+        "offset": utf16_length(message[:offset]),
+        "length": utf16_length(label),
+        "url": url,
+    }
+
+
+def next_step_text(result):
+    proxima_etapa = result.get('proxima_etapa')
+    if proxima_etapa is None:
+        return 'não informada'
+
+    proxima_etapa = str(proxima_etapa).strip()
+    return proxima_etapa or 'não informada'
+
+
+def send_status_notification(notifier, status_line, result, message_id, thread_id=None):
+    app_link = build_gmail_app_link(message_id, thread_id)
+    web_link = build_gmail_web_link(message_id, thread_id)
+    app_label = f"Abrir no Gmail app ({GMAIL_ACCOUNT})"
+    lines = [status_line]
+
+    if result.get('resultado') == 'avancou':
+        lines.append(f"Próxima etapa: {next_step_text(result)}")
+
+    lines.extend([app_label, f"Web/PC: {web_link}"])
+    message = "\n".join(lines)
+    entities = [build_text_link_entity(message, app_label, app_link)]
+
+    print(f"Sending notification to Telegram: {message}")
+    notifier.send_message(message, entities=entities)
+
+
 def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, thread_id=None):
     if not result.get('job_related'):
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
@@ -46,18 +86,23 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False,
         resultado = result.get('resultado')
         empresa = result.get('empresa', 'Unknown')
         cargo = result.get('cargo', 'Unknown')
-        app_link = build_gmail_app_link(message_id, thread_id)
-        web_link = build_gmail_web_link(message_id, thread_id)
-        links = f"Gmail app: {app_link}\nWeb/PC: {web_link}"
 
         if resultado == 'rejeitado':
-            message = f"❌ Rejeitado — {empresa} ({cargo})\n{links}"
-            print(f"Sending notification to Telegram: {message}")
-            notifier.send_message(message)
+            send_status_notification(
+                notifier,
+                f"❌ Rejeitado — {empresa} ({cargo})",
+                result,
+                message_id,
+                thread_id,
+            )
         elif resultado == 'avancou':
-            message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{links}"
-            print(f"Sending notification to Telegram: {message}")
-            notifier.send_message(message)
+            send_status_notification(
+                notifier,
+                f"✅ Avançou de etapa — {empresa} ({cargo})",
+                result,
+                message_id,
+                thread_id,
+            )
         else:
             print(f"Email {message_id} resultado is '{resultado}'. No notification sent.")
 

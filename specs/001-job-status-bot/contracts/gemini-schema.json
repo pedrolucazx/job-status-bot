@@ -16,8 +16,22 @@
     "resultado": {
       "type": "string",
       "description": "The outcome of the application status.",
-      "enum": ["rejeitado", "avancou", "indefinido"]
+      "enum": [
+        "rejeitado",
+        "avancou",
+        "indefinido"
+      ]
+    },
+    "proxima_etapa": {
+      "type": "string",
+      "description": "Short description of the explicit next step when resultado is avancou, or an empty string when not stated."
     }
   },
-  "required": ["job_related", "empresa", "cargo", "resultado"]
+  "required": [
+    "job_related",
+    "empresa",
+    "cargo",
+    "resultado",
+    "proxima_etapa"
+  ]
 }

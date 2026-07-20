@@ -17,6 +17,11 @@ RULES = """Regras pro campo "resultado":
 - "avancou": a empresa explicitamente convida pra uma próxima etapa concreta (ex: "gostaríamos de agendar uma entrevista", "você foi selecionado para a próxima fase").
 - "indefinido": qualquer coisa que não seja um veredito claro — isso INCLUI confirmação de recebimento de candidatura ("recebemos seu currículo", "sua candidatura foi enviada com sucesso", "obrigado por se candidatar"), atualização de status neutra sem decisão, ou qualquer ambiguidade. Na dúvida, use "indefinido", nunca infira "avancou" ou "rejeitado" de uma mensagem genérica de confirmação.
 
+Regras pro campo "proxima_etapa":
+- Preencha apenas quando o email disser explicitamente qual é a próxima ação/etapa (ex: "entrevista técnica", "teste prático", "agendar conversa", "preencher formulário").
+- Use uma frase curta, preservando o sentido do email.
+- Se a próxima etapa não estiver clara ou o resultado não for "avancou", use string vazia. Não invente.
+
 Alguns emails (principalmente do LinkedIn) trazem um "Sinal de template" extraído do próprio provedor — é o nome interno que a plataforma dá àquele tipo de email, e é um indício confiável do que ele realmente é, use como forte apoio pra decisão além do texto:
 - nomes contendo "rejected" → forte indício de "rejeitado".
 - nomes contendo "viewed", "confirmation", "reminder", "saved_job", "alert" → NÃO são veredito, tratar como "indefinido" (ou job_related=false se for só alerta de vaga sem candidatura associada), mesmo que o texto pareça positivo.

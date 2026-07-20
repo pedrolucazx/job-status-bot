@@ -10,7 +10,7 @@ class TestLLMHandler(unittest.TestCase):
     def test_extract_info(self, mock_genai_model):
         mock_model_instance = Mock()
         mock_model_instance.generate_content.return_value = Mock(
-            text='{"job_related": true, "empresa": "TechCorp", "cargo": "Backend", "resultado": "rejeitado"}'
+            text='{"job_related": true, "empresa": "TechCorp", "cargo": "Backend", "resultado": "rejeitado", "proxima_etapa": ""}'
         )
         mock_genai_model.return_value = mock_model_instance
 
@@ -27,8 +27,8 @@ class TestLLMHandler(unittest.TestCase):
         mock_model_instance = Mock()
         mock_model_instance.generate_content.return_value = Mock(
             text='['
-                 '{"id": "1", "job_related": true, "empresa": "TechCorp", "cargo": "Backend", "resultado": "rejeitado"},'
-                 '{"id": "2", "job_related": false, "empresa": "", "cargo": "", "resultado": "indefinido"}'
+                 '{"id": "1", "job_related": true, "empresa": "TechCorp", "cargo": "Backend", "resultado": "rejeitado", "proxima_etapa": ""},'
+                 '{"id": "2", "job_related": false, "empresa": "", "cargo": "", "resultado": "indefinido", "proxima_etapa": ""}'
                  ']'
         )
         mock_genai_model.return_value = mock_model_instance
