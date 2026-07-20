@@ -1,4 +1,5 @@
 import argparse
+import os
 from urllib.parse import quote
 from dotenv import load_dotenv
 from src.bot.gmail_client import GmailClient
@@ -18,6 +19,7 @@ EXCLUDED_SENDERS = [
 
 BATCH_SIZE = 10
 GMAIL_ACCOUNT = "pedrolucazxmesquita@gmail.com"
+GMAIL_IOS_ACCOUNT_ID = os.getenv('GMAIL_IOS_ACCOUNT_ID', '1')
 
 
 def is_excluded(sender):
@@ -25,10 +27,16 @@ def is_excluded(sender):
     return any(addr in sender_lower for addr in EXCLUDED_SENDERS)
 
 
-def build_gmail_link(message_id, thread_id=None):
-    conversation_id = thread_id or message_id
+def build_gmail_app_link(message_id, thread_id=None):
+    conversation_id = quote(thread_id or message_id, safe='')
+    account_id = quote(GMAIL_IOS_ACCOUNT_ID, safe='')
+    return f"googlegmail:///cv={conversation_id}/accountId={account_id}"
+
+
+def build_gmail_web_link(message_id, thread_id=None):
+    conversation_id = quote(thread_id or message_id, safe='')
     account = quote(GMAIL_ACCOUNT, safe='')
-    return f"https://mail.google.com/mail/?authuser={account}#all/{quote(conversation_id, safe='')}"
+    return f"https://mail.google.com/mail/?authuser={account}#all/{conversation_id}"
 
 
 def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, thread_id=None):
@@ -38,14 +46,16 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False,
         resultado = result.get('resultado')
         empresa = result.get('empresa', 'Unknown')
         cargo = result.get('cargo', 'Unknown')
-        email_link = build_gmail_link(message_id, thread_id)
+        app_link = build_gmail_app_link(message_id, thread_id)
+        web_link = build_gmail_web_link(message_id, thread_id)
+        links = f"Gmail app: {app_link}\nWeb/PC: {web_link}"
 
         if resultado == 'rejeitado':
-            message = f"❌ Rejeitado — {empresa} ({cargo})\n{email_link}"
+            message = f"❌ Rejeitado — {empresa} ({cargo})\n{links}"
             print(f"Sending notification to Telegram: {message}")
             notifier.send_message(message)
         elif resultado == 'avancou':
-            message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{email_link}"
+            message = f"✅ Avançou de etapa — {empresa} ({cargo})\n{links}"
             print(f"Sending notification to Telegram: {message}")
             notifier.send_message(message)
         else:
