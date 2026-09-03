@@ -7,7 +7,7 @@ from google.api_core.exceptions import ResourceExhausted
 from google.generativeai.types import GenerationConfig
 
 DEFAULT_SCHEMA_PATH = os.path.join(
-    os.path.dirname(__file__), '..', '..', 'specs', '001-job-status-bot', 'contracts', 'gemini-schema.json'
+    os.path.dirname(__file__), '..', 'config', 'gemini-schema.json'
 )
 
 MAX_BODY_CHARS = 1500
