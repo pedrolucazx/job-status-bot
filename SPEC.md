@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Bot que lê a caixa do Gmail (`pedrolucazxmesquita@gmail.com`), identifica
+Bot que lê a caixa do Gmail (`$GMAIL_ACCOUNT`), identifica
 emails de processos seletivos (rejeição / avanço de etapa) e notifica o
 candidato via Telegram. O candidato já se candidata e preenche empresa/cargo
 manualmente no fluxo do repo `job-search` — este bot só existe pra avisar

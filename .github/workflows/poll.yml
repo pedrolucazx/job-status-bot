@@ -3,7 +3,7 @@ name: Job Status Bot
 on:
   schedule:
     # Safety net only — real triggering is external (cron-job.org calling
-    # workflow_dispatch every 5 min), since GitHub's own schedule trigger
+    # workflow_dispatch every 15 min), since GitHub's own schedule trigger
     # is unreliably delayed (observed 55-255 min gaps on this repo).
     - cron: '0 * * * *'
   workflow_dispatch:
@@ -33,6 +33,7 @@ jobs:
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          GMAIL_ACCOUNT: ${{ secrets.GMAIL_ACCOUNT }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Bot que lê a caixa do Gmail (`pedrolucazxmesquita@gmail.com`), identifica emails de processos seletivos (rejeição / avanço de etapa) e notifica o candidato via Telegram."
+**Input**: User description: "Bot que lê a caixa do Gmail (`$GMAIL_ACCOUNT`), identifica emails de processos seletivos (rejeição / avanço de etapa) e notifica o candidato via Telegram."
 
 ## User Scenarios & Testing *(mandatory)*
 

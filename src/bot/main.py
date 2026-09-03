@@ -18,7 +18,7 @@ EXCLUDED_SENDERS = [
 ]
 
 BATCH_SIZE = 10
-GMAIL_ACCOUNT = "pedrolucazxmesquita@gmail.com"
+GMAIL_ACCOUNT = os.getenv('GMAIL_ACCOUNT', '0')
 GMAIL_IOS_ACCOUNT_ID = os.getenv('GMAIL_IOS_ACCOUNT_ID', '1')
 GMAIL_REDIRECT_BASE = os.getenv(
     'GMAIL_REDIRECT_BASE',
