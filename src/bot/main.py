@@ -46,26 +46,29 @@ def next_step_text(result):
     return proxima_etapa or 'não informada'
 
 
-def send_status_notification(notifier, status_line, result, message_id, rfc822_msgid=None, notion_line=None):
-    lines = [status_line, '',
-             f"Empresa: {result.get('empresa') or 'não informada'}",
-             f"Vaga: {result.get('cargo') or 'não informada'}"]
+def send_status_notification(notifier, status_line, result, message_id, rfc822_msgid=None,
+                             notion_line=None, subject=None):
+    """Short, scannable message. The Gmail iOS app can't open a specific e-mail from a
+    link, so the subject is the reliable way back to it; the button is for web/desktop."""
+    empresa = result.get('empresa') or 'empresa não informada'
+    cargo = result.get('cargo') or 'vaga não informada'
+    lines = [status_line, f"{empresa} · {cargo}"]
     if result.get('resultado') == 'avancou':
         lines.extend(['', f"Próxima etapa: {next_step_text(result)}"])
     if result.get('evidencia'):
-        lines.extend(['', f"Trecho do e-mail: {' '.join(result['evidencia'].split())[:700]}"])
+        lines.extend(['', f"“{' '.join(result['evidencia'].split())[:500]}”"])
     if notion_line:
         lines.extend(['', notion_line])
-    if rfc822_msgid:
-        lines.extend(['', 'Se o link não abrir no app, copie esta busca no Gmail:',
-                      f"in:anywhere rfc822msgid:{rfc822_msgid}"])
+    if subject:
+        lines.extend(['', f"No Gmail, busque: {' '.join(subject.split())[:150]}"])
     notifier.send_message(
         "\n".join(lines),
         email_url=build_gmail_web_link(message_id, rfc822_msgid),
     )
 
 
-def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, rfc822_msgid=None, tracker=None):
+def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, rfc822_msgid=None, tracker=None,
+                     subject=None):
     if result.get('job_related') is not True:
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
     else:
@@ -81,6 +84,7 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False,
                 message_id,
                 rfc822_msgid,
                 notion_line,
+                subject,
             )
         elif resultado == 'avancou':
             send_status_notification(
@@ -90,6 +94,7 @@ def notify_and_label(result, gmail_client, notifier, message_id, simulate=False,
                 message_id,
                 rfc822_msgid,
                 notion_line,
+                subject,
             )
         else:
             print(f"Email {message_id} resultado is '{resultado}'. No notification sent.")
@@ -118,7 +123,8 @@ def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False, tr
             continue
         try:
             notify_and_label(result, gmail_client, notifier, email['id'],
-                             simulate=simulate, rfc822_msgid=email.get('rfc822_msgid'), tracker=tracker)
+                             simulate=simulate, rfc822_msgid=email.get('rfc822_msgid'), tracker=tracker,
+                             subject=email.get('subject'))
         except Exception:
             # Isolate delivery/label failures; later emails still need processing.
             # Exception text can contain credential-bearing request URLs.

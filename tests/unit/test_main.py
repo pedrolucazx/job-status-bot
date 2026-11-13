@@ -32,11 +32,14 @@ class TestMain(unittest.TestCase):
         result = {'job_related': True, 'resultado': 'avancou', 'empresa': 'Acme',
                   'cargo': 'Backend', 'proxima_etapa': 'entrevista técnica',
                   'evidencia': 'Você foi selecionado para entrevista.'}
-        notify_and_label(result, gmail, notifier, 'msg', rfc822_msgid='abc@example.org')
+        notify_and_label(result, gmail, notifier, 'msg', rfc822_msgid='abc@example.org',
+                         subject='[Acme] Próxima etapa')
         message = notifier.send_message.call_args.args[0]
-        self.assertIn('✅ Você avançou de etapa\n\nEmpresa: Acme\nVaga: Backend', message)
-        self.assertIn('Próxima etapa: entrevista técnica', message)
-        self.assertIn('rfc822msgid:abc@example.org', message)
+        self.assertEqual(message, '✅ Você avançou de etapa\nAcme · Backend\n\n'
+                                  'Próxima etapa: entrevista técnica\n\n'
+                                  '“Você foi selecionado para entrevista.”\n\n'
+                                  'No Gmail, busque: [Acme] Próxima etapa')
+        self.assertNotIn('rfc822msgid', message)
         self.assertEqual(notifier.send_message.call_args.kwargs['email_url'], build_gmail_web_link('msg', 'abc@example.org'))
 
     def test_delivery_failure_keeps_email_unlabeled(self):
