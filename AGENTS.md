@@ -3,8 +3,9 @@
 Read `SPEC.md` before doing anything — it's the source of truth for
 scope, flow, and acceptance criteria. Its "Não-objetivos" section is
 deliberate, not an oversight: don't implement past what's listed as
-in-scope (no Notion writes, no silence detection, no Telegram button
-confirmation in the MVP).
+in-scope (no silence detection, no Telegram button confirmation). Notion
+writes are in scope since specs/002-atualizar-notion: update an existing
+row on a verdict, never create one, never regress a status.
 
 Prefer stdlib/native/one-liners before reaching for a new dependency.
 This project has no server and no database by design; keep it that way

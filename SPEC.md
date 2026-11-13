@@ -6,16 +6,16 @@ Bot que lê a caixa do Gmail (`$GMAIL_ACCOUNT`), identifica
 emails de processos seletivos (rejeição / avanço de etapa) e notifica o
 candidato via Telegram. O candidato já se candidata e preenche empresa/cargo
 manualmente no fluxo do repo `job-search` — este bot só existe pra avisar
-"passou ou não, em qual empresa". O próprio usuário atualiza a coluna
-Status no Notion depois de ler a notificação.
+"passou ou não, em qual empresa". Desde a spec 002 (`specs/002-atualizar-notion/`)
+o bot também move a candidatura no tracker do Notion quando há veredito
+(Status + trecho no Feedback), com match estrito e sem nunca regredir.
 
 ## Não-objetivos (fora de escopo do MVP — não implementar)
 
-- Escrever no Notion automaticamente (cogitado como fase 2, só se o MVP
-  provar valor)
 - Detectar "silêncio"/falta de resposta da empresa (não é um sinal que o
   bot pode agir em cima — não há email pra processar)
-- Matching do email contra uma page específica do Notion
+- Criar linha nova no Notion (candidatura não registrada é do `/confirm`
+  no job-search) ou escrever no Notion sem match único
 - Confirmação via botão do Telegram antes de qualquer ação — não há ação
   a confirmar no MVP, é notificação pura, unidirecional
 
@@ -96,7 +96,8 @@ icims.com
 - `GEMINI_API_KEY`
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`
 
-Nenhuma credencial de Notion é necessária — o bot não escreve lá.
+- `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` (opcionais: sem eles o bot só
+  notifica, como no MVP)
 
 ## Stack
 

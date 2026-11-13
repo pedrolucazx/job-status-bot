@@ -64,6 +64,17 @@ O botão usa a [API oficial do Telegram](https://core.telegram.org/bots/api#send
 Erros de envio deixam o email sem label para tentar depois. Em falhas ambíguas
 (timeout após envio ou falha na label), um aviso pode se repetir.
 
+## Notion
+
+Com `NOTION_TOKEN` e `NOTION_DATA_SOURCE_ID` definidos (integração interna do
+Notion compartilhada com o banco de candidaturas), cada reprovação ou avanço
+também atualiza a linha da candidatura: Status (`Rejeitado`, `Entrevista
+cultural` ou `Teste técnico`) e o trecho do e-mail no Feedback. O match exige
+empresa e cargo únicos; na dúvida não escreve e o aviso pede atualização
+manual. Um status encerrado (`Rejeitado`, `Posição fechada`, `Aceito`...) nunca
+muda. Sem as variáveis, o bot só notifica. Detalhes em
+`specs/002-atualizar-notion/spec.md`.
+
 ## Testes
 
 ```sh
