@@ -74,3 +74,25 @@ class TestMain(unittest.TestCase):
         process_batch([{'id': 'bad'}, {'id': 'good'}], gmail, llm, notifier)
         self.assertEqual(notifier.send_message.call_count, 2)
         gmail.apply_label.assert_called_once_with('good', 'jobbot-processado')
+
+
+class TestReviewAndExclusions(unittest.TestCase):
+    def test_invalid_verdict_is_labeled_for_review_and_not_retried(self):
+        gmail, llm, notifier = Mock(), Mock(), Mock()
+        llm.classify_batch.return_value = {'x': {'job_related': True, 'resultado': 'avancou', 'invalid': True}}
+        process_batch([{'id': 'x'}], gmail, llm, notifier)
+        notifier.send_message.assert_not_called()
+        labels = [c.args[1] for c in gmail.apply_label.call_args_list]
+        self.assertEqual(labels, ['jobbot-revisar', 'jobbot-processado'])
+
+    def test_missing_review_label_still_marks_processed(self):
+        gmail, llm = Mock(), Mock()
+        gmail.apply_label.side_effect = [ValueError('missing'), None]
+        llm.classify_batch.return_value = {'x': {'job_related': True, 'resultado': 'avancou', 'invalid': True}}
+        process_batch([{'id': 'x'}], gmail, llm, Mock())
+        self.assertEqual(gmail.apply_label.call_args_list[-1].args, ('x', 'jobbot-processado'))
+
+    def test_linkedin_stats_skip_gemini(self):
+        from src.bot.main import is_excluded
+        self.assertTrue(is_excluded('LinkedIn <notifications-noreply@linkedin.com>'))
+        self.assertFalse(is_excluded('LinkedIn <jobs-noreply@linkedin.com>'))  # Easy Apply verdicts come from here

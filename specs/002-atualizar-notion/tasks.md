@@ -12,6 +12,10 @@
   Sondagem em massa contra as 429 linhas reais (886 vereditos sintéticos):
   849 linha certa, 31 manual, 0 em outra empresa; 4 vão para a recandidatura
   aberta da mesma empresa e vaga (comportamento documentado).
-- [ ] T6 Validar que a API aceita reenviar Feedback com links mailto (PATCH
-  sem mudança de conteúdo numa linha real, com aval do usuário)
-- [ ] T7 Secrets no GitHub, push, reativar workflow, validação real
+- [x] T6 PATCH real sem mudança de conteúdo numa linha com link mailto:
+  aceito, Feedback idêntico depois.
+- [x] T7 Secrets no GitHub, push para master, workflow reativado, run manual ok
+  (Gmail do secret válido, Notion habilitado).
+- [x] T8 Cota do Gemini: veredito sem trecho vira label jobbot-revisar (sem
+  retry infinito), comparação do trecho sem caixa/acento/pontuação, busca
+  exclui enviados/rascunhos/promoções, stats do LinkedIn fora.

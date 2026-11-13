@@ -75,6 +75,15 @@ manual. Um status encerrado (`Rejeitado`, `Posição fechada`, `Aceito`...) nunc
 muda. Sem as variáveis, o bot só notifica. Detalhes em
 `specs/002-atualizar-notion/spec.md`.
 
+## Cota do Gemini
+
+Só e-mail novo vai para o Gemini, em lotes de 10: uma execução sem e-mail novo
+não faz nenhuma chamada. Ficam de fora os enviados por você, rascunhos,
+promoções e remetentes de puro ruído (`EXCLUDED_SENDERS`). Quando o Gemini
+afirma um veredito cujo trecho não aparece no e-mail (comparado sem diferenciar
+caixa, acento e pontuação), o e-mail recebe o label `jobbot-revisar` e não é
+reenviado: antes ele voltava ao Gemini a cada execução.
+
 ## Testes
 
 ```sh

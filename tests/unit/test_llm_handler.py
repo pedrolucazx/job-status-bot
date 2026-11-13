@@ -60,6 +60,13 @@ class TestDecisionEvidence(unittest.TestCase):
         self.assertEqual(validate_decision(result, 'Seguimos com\n outros candidatos.'), result)
 
 
+    def test_case_accents_and_punctuation_are_not_invention(self):
+        result = {'job_related': True, 'resultado': 'rejeitado', 'evidencia': '"Optamos por nao avancar"'}
+        self.assertEqual(validate_decision(result, 'Neste momento, optamos por não avançar com sua candidatura.'), result)
+        with self.assertRaises(ValueError):
+            validate_decision({**result, 'evidencia': 'optamos por avançar'}, 'optamos por não avançar')
+
+
 class TestBatchEvidence(unittest.TestCase):
     @patch.dict(os.environ, {'GEMINI_API_KEY': 'fake'})
     @patch('google.generativeai.GenerativeModel')
@@ -74,7 +81,8 @@ class TestBatchEvidence(unittest.TestCase):
             {'id': 'good', 'subject': 'Retorno', 'body': 'Não vamos seguir.'},
         ]
         results = handler.classify_batch(emails)
-        self.assertNotIn('bad', results)
+        self.assertTrue(results['bad']['invalid'])  # kept, so main labels it for review instead of retrying
+        self.assertNotIn('invalid', results['good'])
         self.assertEqual(results['good']['resultado'], 'rejeitado')
 
 

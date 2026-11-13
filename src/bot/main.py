@@ -15,8 +15,10 @@ load_dotenv()
 # so this never needs updating for a new ATS or a foreign-language email.
 EXCLUDED_SENDERS = [
     "jobalerts-noreply@linkedin.com",
+    "notifications-noreply@linkedin.com",  # weekly post stats, never a verdict
     "avisovagas@catho.com.br",
 ]
+REVIEW_LABEL = 'jobbot-revisar'  # Gemini claimed a verdict it couldn't quote
 
 BATCH_SIZE = 10
 GMAIL_ACCOUNT = os.getenv('GMAIL_ACCOUNT', '0')
@@ -104,6 +106,15 @@ def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False, tr
         result = results.get(email['id'])
         if result is None:
             print(f"Email {email['id']} missing from batch response, leaving unlabeled for retry.")
+            continue
+        if result.get('invalid'):
+            if not simulate:
+                try:
+                    gmail_client.apply_label(email['id'], REVIEW_LABEL)
+                except ValueError:
+                    print(f"Label {REVIEW_LABEL} missing in Gmail; create it to see these e-mails.")
+                gmail_client.apply_label(email['id'], 'jobbot-processado')
+            print(f"Email {email['id']} labeled {REVIEW_LABEL}; no notification, no retry.")
             continue
         try:
             notify_and_label(result, gmail_client, notifier, email['id'],

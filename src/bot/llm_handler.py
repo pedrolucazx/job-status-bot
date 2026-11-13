@@ -1,4 +1,6 @@
 import os
+import re
+import unicodedata
 import time
 import google.generativeai as genai
 
@@ -35,6 +37,12 @@ Alguns emails (principalmente do LinkedIn) trazem um "Sinal de template" extraí
 - se não houver sinal de template, ou o nome não for reconhecível, julgue só pelo conteúdo do email normalmente."""
 
 
+def _comparable(text):
+    """Case and punctuation don't make a quote invented ("não avançar." vs "Nao avancar")."""
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.split(r"[^a-z0-9]+", plain)).strip()
+
+
 def validate_decision(result, source):
     """Reject fabricated evidence, without treating a model error as processed."""
     if type(result.get('job_related')) is not bool:
@@ -43,7 +51,7 @@ def validate_decision(result, source):
         evidence = result.get('evidencia')
         if not isinstance(evidence, str) or not evidence.strip():
             raise ValueError('Missing decision evidence')
-        if ' '.join(evidence.split()) not in ' '.join(source.split()):
+        if _comparable(evidence) not in _comparable(source):
             raise ValueError('Decision evidence is not in the email')
     return result
 
@@ -130,7 +138,10 @@ Retorne um item no array de saída pra CADA email da lista abaixo, usando o mesm
             try:
                 validated[email['id']] = validate_decision(result, source)
             except ValueError:
-                print(f"Email {email['id']} has an unsupported decision; leaving unlabeled.")
+                # Retrying every run would spend the Gemini quota on the same e-mail
+                # forever; mark it for a human instead.
+                print(f"Email {email['id']} has an unsupported decision; marking for review.")
+                validated[email['id']] = {**result, 'invalid': True}
         return validated
 
     def _generate_with_retry(self, prompt, generation_config):

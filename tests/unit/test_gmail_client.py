@@ -2,6 +2,15 @@ import unittest
 from unittest.mock import patch, Mock, MagicMock
 from src.bot.gmail_client import GmailClient
 
+from src.bot.gmail_client import PENDING
+
+
+class TestPendingQuery(unittest.TestCase):
+    def test_own_mail_and_promotions_never_reach_gemini(self):
+        for part in ('-label:jobbot-processado', '-in:sent', '-in:drafts', '-category:promotions'):
+            self.assertIn(part, PENDING)
+
+
 class TestGmailClient(unittest.TestCase):
 
     @patch('src.bot.gmail_client.get_credentials')

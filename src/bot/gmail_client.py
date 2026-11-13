@@ -6,6 +6,9 @@ from src.utils.auth import get_credentials
 
 _URL_RE = re.compile(r'https?://\S+')
 _TEMPLATE_RE = re.compile(r'email_[a-zA-Z0-9_]+')
+# Every e-mail sent to Gemini costs quota: never the user's own sent mail,
+# drafts or promotions.
+PENDING = '-label:jobbot-processado -in:sent -in:drafts -category:promotions'
 
 def _content_length(text):
     """Length of the text with URLs stripped — long footers are mostly
@@ -59,10 +62,10 @@ class GmailClient:
         # Recent mail first, so new applications aren't stuck behind an
         # old backlog while it's still draining under the LLM rate limit.
         recent = self.service.users().messages().list(
-            userId='me', q='-label:jobbot-processado newer_than:2d'
+            userId='me', q=f'{PENDING} newer_than:2d'
         ).execute().get('messages', [])
         backlog = self.service.users().messages().list(
-            userId='me', q='-label:jobbot-processado'
+            userId='me', q=PENDING
         ).execute().get('messages', [])
 
         seen = set()
