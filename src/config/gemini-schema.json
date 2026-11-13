@@ -25,6 +25,10 @@
     "proxima_etapa": {
       "type": "string",
       "description": "Short description of the explicit next step when resultado is avancou, or an empty string when not stated."
+    },
+    "evidencia": {
+      "type": "string",
+      "description": "Exact quote from the email proving rejection or advancement; empty otherwise."
     }
   },
   "required": [
@@ -32,6 +36,7 @@
     "empresa",
     "cargo",
     "resultado",
-    "proxima_etapa"
+    "proxima_etapa",
+    "evidencia"
   ]
 }

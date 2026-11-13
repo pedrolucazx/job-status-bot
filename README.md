@@ -32,3 +32,43 @@ Bot que lê emails de processos seletivos no Gmail, identifica rejeições e ava
 - `src/bot/notifier.py` — notificação via Telegram
 - `src/bot/main.py` — orquestração principal
 - `.github/workflows/poll.yml` — execução via `workflow_dispatch` (cron-job.org a cada 15 min) + `schedule` de hora em hora como safety net
+
+## Notificações
+
+Somente avanço explícito de etapa ou reprovação gera aviso. Inscrição recebida,
+visualização de currículo e testes automáticos para completar cadastro ficam
+silenciosos. O classificador fornece um trecho literal da decisão, conferido
+contra o email; isso reduz invenções, mas não elimina erros de interpretação.
+
+Exemplo:
+```
+✅ Você avançou de etapa
+
+Empresa: Acme
+Vaga: Backend
+
+Próxima etapa: entrevista técnica
+
+Trecho do e-mail: Você foi selecionado para entrevista técnica.
+```
+
+Um botão “Abrir e-mail no Gmail” busca o Message-ID original por HTTPS, usando
+`GMAIL_ACCOUNT` para indicar a conta. A busca `in:anywhere rfc822msgid:...` fica
+no texto para copiar no Gmail do celular. Esse operador é documentado pelo
+[Google](https://support.google.com/mail/answer/7190). A abertura no app depende
+do aparelho; o link pode abrir no navegador. Sem Message-ID há fallback web
+pelo ID da mensagem. Novos avisos não usam a antiga página de redirecionamento
+nem `GMAIL_IOS_ACCOUNT_ID`. Links de mensagens antigas não são alterados.
+
+O botão usa a [API oficial do Telegram](https://core.telegram.org/bots/api#sendmessage).
+Erros de envio deixam o email sem label para tentar depois. Em falhas ambíguas
+(timeout após envio ou falha na label), um aviso pode se repetir.
+
+## Testes
+
+```sh
+python -m unittest discover -s tests/unit -v
+```
+
+Testes usam mocks, sem enviar Telegram, chamar Gemini ou alterar Gmail.
+A validação de abertura no celular e da classificação com emails reais é manual.

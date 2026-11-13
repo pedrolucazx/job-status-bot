@@ -19,11 +19,6 @@ EXCLUDED_SENDERS = [
 
 BATCH_SIZE = 10
 GMAIL_ACCOUNT = os.getenv('GMAIL_ACCOUNT', '0')
-GMAIL_IOS_ACCOUNT_ID = os.getenv('GMAIL_IOS_ACCOUNT_ID', '1')
-GMAIL_REDIRECT_BASE = os.getenv(
-    'GMAIL_REDIRECT_BASE',
-    'https://pedrolucazx.github.io/job-status-bot/gmail-redirect.html',
-)
 
 
 def is_excluded(sender):
@@ -31,40 +26,12 @@ def is_excluded(sender):
     return any(addr in sender_lower for addr in EXCLUDED_SENDERS)
 
 
-def build_gmail_app_link(message_id, thread_id=None):
-    conversation_id = quote(thread_id or message_id, safe='')
-    account_id = quote(GMAIL_IOS_ACCOUNT_ID, safe='')
-    return f"googlegmail:///cv={conversation_id}/accountId={account_id}"
-
-
-def build_gmail_web_link(message_id, thread_id=None):
-    conversation_id = quote(thread_id or message_id, safe='')
-    account = quote(GMAIL_ACCOUNT, safe='')
-    return f"https://mail.google.com/mail/?authuser={account}#all/{conversation_id}"
-
-
-def build_gmail_mobile_link(message_id, thread_id=None):
-    app_link = build_gmail_app_link(message_id, thread_id)
-    web_link = build_gmail_web_link(message_id, thread_id)
-    return (
-        f"{GMAIL_REDIRECT_BASE}?"
-        f"to={quote(app_link, safe='')}&"
-        f"fallback={quote(web_link, safe='')}"
-    )
-
-
-def utf16_length(text):
-    return len(text.encode('utf-16-le')) // 2
-
-
-def build_text_link_entity(message, label, url):
-    offset = message.index(label)
-    return {
-        "type": "text_link",
-        "offset": utf16_length(message[:offset]),
-        "length": utf16_length(label),
-        "url": url,
-    }
+def build_gmail_web_link(message_id, rfc822_msgid=None):
+    account = quote(GMAIL_ACCOUNT or '0', safe='')
+    if rfc822_msgid:
+        query = quote(f"in:anywhere rfc822msgid:{rfc822_msgid}", safe='')
+        return f"https://mail.google.com/mail/?authuser={account}#search/{query}"
+    return f"https://mail.google.com/mail/?authuser={account}#all/{quote(message_id, safe='')}"
 
 
 def next_step_text(result):
@@ -76,46 +43,44 @@ def next_step_text(result):
     return proxima_etapa or 'não informada'
 
 
-def send_status_notification(notifier, status_line, result, message_id, thread_id=None):
-    mobile_link = build_gmail_mobile_link(message_id, thread_id)
-    web_link = build_gmail_web_link(message_id, thread_id)
-    app_label = f"Abrir no Gmail app ({GMAIL_ACCOUNT})"
-    lines = [status_line]
-
+def send_status_notification(notifier, status_line, result, message_id, rfc822_msgid=None):
+    lines = [status_line, '',
+             f"Empresa: {result.get('empresa') or 'não informada'}",
+             f"Vaga: {result.get('cargo') or 'não informada'}"]
     if result.get('resultado') == 'avancou':
-        lines.append(f"Próxima etapa: {next_step_text(result)}")
+        lines.extend(['', f"Próxima etapa: {next_step_text(result)}"])
+    if result.get('evidencia'):
+        lines.extend(['', f"Trecho do e-mail: {' '.join(result['evidencia'].split())[:700]}"])
+    if rfc822_msgid:
+        lines.extend(['', 'Se o link não abrir no app, copie esta busca no Gmail:',
+                      f"in:anywhere rfc822msgid:{rfc822_msgid}"])
+    notifier.send_message(
+        "\n".join(lines),
+        email_url=build_gmail_web_link(message_id, rfc822_msgid),
+    )
 
-    lines.extend([app_label, f"Web/PC: {web_link}"])
-    message = "\n".join(lines)
-    entities = [build_text_link_entity(message, app_label, mobile_link)]
 
-    print(f"Sending notification to Telegram: {message}")
-    notifier.send_message(message, entities=entities)
-
-
-def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, thread_id=None):
-    if not result.get('job_related'):
+def notify_and_label(result, gmail_client, notifier, message_id, simulate=False, rfc822_msgid=None):
+    if result.get('job_related') is not True:
         print(f"Email {message_id} is not job-related. Applying label and skipping.")
     else:
         resultado = result.get('resultado')
-        empresa = result.get('empresa', 'Unknown')
-        cargo = result.get('cargo', 'Unknown')
 
         if resultado == 'rejeitado':
             send_status_notification(
                 notifier,
-                f"❌ Rejeitado — {empresa} ({cargo})",
+                "❌ Reprovação",
                 result,
                 message_id,
-                thread_id,
+                rfc822_msgid,
             )
         elif resultado == 'avancou':
             send_status_notification(
                 notifier,
-                f"✅ Avançou de etapa — {empresa} ({cargo})",
+                "✅ Você avançou de etapa",
                 result,
                 message_id,
-                thread_id,
+                rfc822_msgid,
             )
         else:
             print(f"Email {message_id} resultado is '{resultado}'. No notification sent.")
@@ -133,7 +98,13 @@ def process_batch(batch, gmail_client, llm_handler, notifier, simulate=False):
         if result is None:
             print(f"Email {email['id']} missing from batch response, leaving unlabeled for retry.")
             continue
-        notify_and_label(result, gmail_client, notifier, email['id'], simulate=simulate, thread_id=email.get('thread_id'))
+        try:
+            notify_and_label(result, gmail_client, notifier, email['id'],
+                             simulate=simulate, rfc822_msgid=email.get('rfc822_msgid'))
+        except Exception:
+            # Isolate delivery/label failures; later emails still need processing.
+            # Exception text can contain credential-bearing request URLs.
+            print(f"Email {email['id']} failed during delivery or labeling; will retry.")
 
 
 def chunk(items, size):

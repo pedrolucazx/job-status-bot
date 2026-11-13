@@ -90,12 +90,15 @@ class GmailClient:
             'id': msg.get('id', message['id']),
             'thread_id': msg.get('threadId', message.get('threadId', message['id'])),
         }
-        for header in payload['headers']:
-            if header['name'] == 'Subject':
+        for header in payload.get('headers', []):
+            name = header['name'].lower()
+            if name == 'message-id':
+                email_data['rfc822_msgid'] = header['value'].strip().strip('<>')
+            if name == 'subject':
                 email_data['subject'] = header['value']
-            if header['name'] == 'From':
+            if name == 'from':
                 email_data['sender'] = header['value']
-            if header['name'] == 'List-Unsubscribe':
+            if name == 'list-unsubscribe':
                 match = _TEMPLATE_RE.search(header['value'])
                 if match:
                     email_data['template_hint'] = match.group(0)

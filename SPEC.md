@@ -39,28 +39,29 @@ Status no Notion depois de ler a notificação.
    pede extração estruturada:
 
    ```json
-   { "job_related": true, "empresa": "...", "cargo": "...", "resultado": "rejeitado|avancou|indefinido", "proxima_etapa": "..." }
+   { "job_related": true, "empresa": "...", "cargo": "...", "resultado": "rejeitado|avancou|indefinido", "proxima_etapa": "...", "evidencia": "trecho literal" }
    ```
 
    Menções incidentais (faixa salarial, benefícios) são ruído, não
    critério de classificação — não construir lógica em cima disso.
-5. **Notificação (Telegram, `sendMessage`, sem long-polling)** — só se
-   `job_related` e `resultado != "indefinido"`. Uma linha:
+5. **Notificação** — somente `job_related=true` e `resultado` igual a
+   `avancou` ou `rejeitado`, com `evidencia` literal do assunto/corpo.
+   Confirmações de inscrição, visualizações, lembretes e etapas automáticas
+   para completar inscrição são `indefinido`, sem aviso. Convite para teste
+   exige seleção explícita para aquela etapa. Evidência ausente/inventada
+   invalida a resposta: não notifica e deixa sem label para nova tentativa.
+   A IA ainda pode interpretar incorretamente um trecho real.
 
-   - `❌ Rejeitado — <Empresa> (<Cargo>)`
-   - `✅ Avançou de etapa — <Empresa> (<Cargo>)`
-
-   Quando houver avanço, incluir também a próxima etapa explícita no email
-   (`proxima_etapa`; string vazia no JSON quando não houver próxima etapa
-   clara). Na notificação, mostrar `Próxima etapa: <texto>`, ou `não informada` se o email não deixar isso
-   claro. Linha opcional: link pro email original no Gmail, via HTTPS clicável
-   compatível com Telegram; em mobile pode redirecionar para o Gmail app e
-   mantém fallback web pra conferir o texto completo se quiser. Se `resultado == "indefinido"`
-   (ex: só confirmação de recebimento de candidatura, sem veredito):
-   **não notifica** — evita ruído.
-6. **Marca como processado** — aplica a label `jobbot-processado` no
-   email, independente do resultado (mesmo quando ignorado no passo 3),
-   pra nunca reprocessar.
+   Mensagem: status, empresa, vaga, próxima etapa (somente avanço), trecho
+   original e botão HTTPS para buscar `in:anywhere rfc822msgid:<Message-ID>`
+   no Gmail. A busca também fica no texto para copiar no app. Sem Message-ID,
+   usa o ID da mensagem como fallback web. Não há redirecionamento automático
+   para iOS nem garantia de abertura nativa. Conta logada deve corresponder
+   a `GMAIL_ACCOUNT`.
+6. **Marca como processado** — aplica `jobbot-processado` após confirmação
+   de sucesso do Telegram, ou quando a classificação válida dispensa aviso.
+   Falhas de entrega deixam sem label. Um timeout após envio ou falha ao
+   aplicar label pode causar duplicidade no retry; não há garantia exactly-once.
 
 ## Domínios ATS conhecidos
 
@@ -116,6 +117,6 @@ rate limits do Gmail e do Gemini free tier).
       no Telegram
 - [ ] Um email de avanço de etapa gera notificação correta
 - [ ] Um email irrelevante (newsletter, spam) não gera notificação
-- [ ] Nenhum email é reprocessado/notificado duas vezes
+- [ ] Emails rotulados não são reprocessados; falhas ambíguas podem duplicar aviso
 - [ ] Nenhuma escrita no Gmail além da label (não marca como lido, não
       arquiva, não deleta)

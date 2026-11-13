@@ -21,7 +21,8 @@ class TestGmailClient(unittest.TestCase):
             'threadId': 'thread1',
             'payload': {
                 'headers': [
-                    {'name': 'Subject', 'value': 'Test Subject'},
+                    {'name': 'subject', 'value': 'Test Subject'},
+                    {'name': 'message-id', 'value': '<abc+123@example.org>'},
                     {'name': 'From', 'value': 'test@example.com'}
                 ],
                 'body': {
@@ -36,6 +37,7 @@ class TestGmailClient(unittest.TestCase):
 
         self.assertEqual(len(emails), 1)
         self.assertEqual(emails[0]['id'], 'msg1')
+        self.assertEqual(emails[0]['rfc822_msgid'], 'abc+123@example.org')
         self.assertEqual(emails[0]['thread_id'], 'thread1')
         self.assertEqual(emails[0]['subject'], 'Test Subject')
         self.assertEqual(emails[0]['sender'], 'test@example.com')
@@ -56,7 +58,8 @@ class TestGmailClient(unittest.TestCase):
             'threadId': 'thread1',
             'payload': {
                 'headers': [
-                    {'name': 'Subject', 'value': 'Test Subject'},
+                    {'name': 'subject', 'value': 'Test Subject'},
+                    {'name': 'message-id', 'value': '<abc+123@example.org>'},
                     {'name': 'From', 'value': 'test@example.com'}
                 ],
                 'body': {
